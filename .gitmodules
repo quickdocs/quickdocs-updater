@@ -1,0 +1,3 @@
+[submodule "modules/quicklisp-projects"]
+	path = modules/quicklisp-projects
+	url = https://github.com/quicklisp/quicklisp-projects
