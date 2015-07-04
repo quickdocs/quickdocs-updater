@@ -25,7 +25,10 @@
                :split-sequence)
   :components ((:module "src"
                 :components
-                ((:file "quickdocs-updater"))))
+                ((:file "quickdocs-updater" :depends-on ("extracter"))
+                 (:file "release" :depends-on ("extracter"))
+                 (:file "readme")
+                 (:file "extracter"))))
   :description "Updates Quickdocs database"
   :long-description
   #.(with-open-file (stream (merge-pathnames

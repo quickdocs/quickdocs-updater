@@ -2,6 +2,12 @@
 
 ## Usage
 
+## Requirements
+
+* "timeout" (or "gtimeout" on Mac OS)  command
+* Pandoc (for converting Markdown files)
+* Emacs (for converting Org files)
+
 ## Installation
 
 ## Author
