@@ -15,9 +15,6 @@
 (defparameter *pandoc-path* (or (uiop:getenv "PANDOC_PATH")
                                 "pandoc"))
 
-(defparameter *emacs-path* (or (uiop:getenv "EMACS_PATH")
-                               "emacs"))
-
 (defun which (command)
   (handler-case
       (let* ((result (with-output-to-string (s)
@@ -40,41 +37,23 @@
     (or (which command)
         (error "Requiement ~S does not exist. Ensure if it's installed and check your PATH." command))))
 
-(defun convert-readme (file)
+(defun pandoc (file &key (from "markdown") (to "html"))
   (check-type file pathname)
   (assert (uiop:file-exists-p file))
-  (let ((type (pathname-type file)))
-    (cond
-      ((or (null type)
-           (string= type "txt"))
-       (convert-plaintext-into-html file))
-      ((or (string= type "markdown")
-           (string= type "md"))
-       (convert-markdown-into-html file))
-      ((string= type "org")
-       (convert-org-into-html file)))))
-
-(defun convert-plaintext-into-html (file)
-  (concatenate 'string "<pre>" (uiop:read-file-string file) "</pre>"))
-
-(defun convert-markdown-into-html (file)
   (check-if-command-installed *timeout-command* *pandoc-path*)
-  (ignore-some-conditions (uiop:subprocess-error)
-    (with-output-to-string (s)
-      (uiop:run-program `(,*timeout-command* 10 ,*pandoc-path* ,(namestring file))
-                        :force-shell t
-                        :output s
-                        :error-output *error-output*))))
+  (with-output-to-string (s)
+    (uiop:run-program `(,*timeout-command* "10" ,*pandoc-path* "-f" ,from "-t" ,to ,(namestring (probe-file file)))
+                      :force-shell t
+                      :output s
+                      :error-output *error-output*)))
 
-(defun convert-org-into-html (file)
-  (check-if-command-installed *timeout-command* *emacs-path*)
-  (ignore-some-conditions (uiop:subprocess-error)
-    (with-output-to-string (s)
-      (uiop:run-program `(,*timeout-command*
-                          10
-                          ,*emacs-path* "-Q" "-batch" "--file" ,(namestring file)
-                          "--eval" "(setq org-export-with-toc nil)"
-                          "--eval" "(princ (org-export-as-html 3 nil 'string t))")
-                        :force-shell t
-                        :output s
-                        :error-output *error-output*))))
+(defun convert-readme (file)
+  (check-type file pathname)
+  (let ((type (pathname-type file)))
+    (ignore-some-conditions (uiop:subprocess-error)
+      (cond
+        ((or (string= type "markdown")
+             (string= type "md"))
+         (pandoc file :from "markdown"))
+        ((string= type "org")
+         (pandoc file :from "org"))))))
