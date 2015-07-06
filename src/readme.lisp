@@ -35,7 +35,7 @@
 (defun check-if-command-installed (&rest commands)
   (dolist (command commands)
     (or (which command)
-        (error "Requiement ~S does not exist. Ensure if it's installed and check your PATH." command))))
+        (error "Requirement ~S does not exist. Ensure if it's installed and check your PATH." command))))
 
 (defun pandoc (file &key (from "markdown") (to "html"))
   (check-type file pathname)
