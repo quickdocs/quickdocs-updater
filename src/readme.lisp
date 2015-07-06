@@ -56,4 +56,6 @@
              (string= type "md"))
          (pandoc file :from "markdown"))
         ((string= type "org")
-         (pandoc file :from "org"))))))
+         (pandoc file :from "org"))
+        ((string= type "rst")
+         (pandoc file :from "rst"))))))
