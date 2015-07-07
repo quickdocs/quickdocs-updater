@@ -4,7 +4,7 @@
   (:export :extract-result-directory
            :extractedp
            :run-extract-dist
-           :release-systems-info)
+           :release-info)
   (:documentation "Functions for controlling quickdocs-extracter"))
 (in-package :quickdocs-updater.extracter)
 
@@ -29,7 +29,7 @@
                       :error-output *error-output*))
   (extract-result-directory dist))
 
-(defun release-systems-info (release)
+(defun release-info (release)
   (check-type release ql-dist:release)
   (let ((result-file (extract-result-of-release release)))
     (unless (uiop:file-exists-p result-file)
@@ -38,7 +38,7 @@
         ;; For testing mainly.
         (extract-now ()
           :report "Extract it now in the current thread"
-          (return-from release-systems-info
+          (return-from release-info
             (getf (quickdocs-extracter:serialize-release
                    (ql-dist:name release)
                    (ql-dist:dist release))

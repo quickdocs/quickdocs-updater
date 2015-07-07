@@ -5,26 +5,17 @@
   (:import-from :quickdocs-updater.extracter
                 :extractedp
                 :extract-result-directory
-                :release-systems-info)
+                :release-info)
   (:import-from :alexandria
                 :when-let
                 :starts-with-subseq
                 :compose
                 :ignore-some-conditions)
-  (:export :readme-file
-           :release-version
+  (:export :release-version
            :primary-system
            :project-homepage)
   (:documentation "Function/method collections for Quicklisp releases."))
 (in-package :quickdocs-updater.release)
-
-(defun readme-file (release)
-  (check-type release ql-dist:release)
-  (assert (ql-dist:installedp release))
-  (find "README"
-        (uiop:directory-files (ql-dist:base-directory release))
-        :key #'pathname-name
-        :test #'string=))
 
 (defun release-version (release)
   "Return the latest Quicklisp dist version that `release` was updated."
@@ -65,7 +56,8 @@
 
 (defun project-homepage (release)
   (check-type release ql-dist:release)
-  (let ((systems-info (release-systems-info release)))
+  (let* ((release-info (release-info release))
+         (systems-info (getf release-info :systems)))
     (or
      ;; Use if :homepage exists in ASD files
      (getf (find-if (lambda (info)

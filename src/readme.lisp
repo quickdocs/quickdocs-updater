@@ -1,8 +1,6 @@
 (in-package :cl-user)
 (defpackage quickdocs-updater.readme
   (:use :cl)
-  (:import-from :quickdocs-updater.release
-                :readme-file)
   (:import-from :alexandria
                 :ignore-some-conditions)
   (:export :convert-readme))
@@ -35,27 +33,36 @@
 (defun check-if-command-installed (&rest commands)
   (dolist (command commands)
     (or (which command)
-        (error "Requirement ~S does not exist. Ensure if it's installed and check your PATH." command))))
+        (cerror "Ignore and continue"
+                "Requirement ~S does not exist. Ensure if it's installed and check your PATH." command))))
 
-(defun pandoc (file &key (from "markdown") (to "html"))
-  (check-type file pathname)
-  (assert (uiop:file-exists-p file))
-  (check-if-command-installed *timeout-command* *pandoc-path*)
+(defun pandoc (input &key (from "markdown") (to "html"))
+  (check-type input (or pathname stream))
+  (check-if-command-installed *timeout-command*)
+  (check-if-command-installed *pandoc-path*)
   (with-output-to-string (s)
-    (uiop:run-program `(,*timeout-command* "10" ,*pandoc-path* "-f" ,from "-t" ,to ,(namestring (probe-file file)))
-                      :force-shell t
-                      :output s
-                      :error-output *error-output*)))
+    (let ((in (if (streamp input)
+                  input
+                  (open input))))
+      (unwind-protect
+           (uiop:run-program `(,@(if (which *timeout-command*)
+                                     `(,*timeout-command* "10")
+                                     '())
+                               ,*pandoc-path* "-f" ,from "-t" ,to)
+                             :force-shell t
+                             :input in
+                             :output s
+                             :error-output *error-output*)
+        (unless (streamp input)
+          (close in))))))
 
-(defun convert-readme (file)
-  (check-type file pathname)
-  (let ((type (pathname-type file)))
-    (ignore-some-conditions (uiop:subprocess-error)
-      (cond
-        ((or (string= type "markdown")
-             (string= type "md"))
-         (pandoc file :from "markdown"))
-        ((string= type "org")
-         (pandoc file :from "org"))
-        ((string= type "rst")
-         (pandoc file :from "rst"))))))
+(defun convert-readme (input &optional (type "markdown"))
+  (ignore-some-conditions (uiop:subprocess-error)
+    (cond
+      ((or (string= type "markdown")
+           (string= type "md"))
+       (pandoc input :from "markdown"))
+      ((string= type "org")
+       (pandoc input :from "org"))
+      ((string= type "rst")
+       (pandoc input :from "rst")))))
