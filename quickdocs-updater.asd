@@ -21,15 +21,19 @@
                :datafly
                :sxql
                :cl-ppcre
+               :dexador
                :quri
+               :plump
+               :clss
                :uiop
                :alexandria
                :split-sequence)
   :components ((:module "src"
                 :components
-                ((:file "quickdocs-updater" :depends-on ("extracter" "release" "readme"))
+                ((:file "quickdocs-updater" :depends-on ("extracter" "release" "readme" "cliki"))
                  (:file "release" :depends-on ("extracter"))
                  (:file "readme")
+                 (:file "cliki")
                  (:file "extracter"))))
   :description "Updates Quickdocs database"
   :long-description

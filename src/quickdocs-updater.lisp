@@ -10,8 +10,11 @@
                 :release-repos-url)
   (:import-from :quickdocs-updater.readme 
                 :pandoc)
+  (:import-from :quickdocs-updater.cliki
+                :cliki-project-info)
   (:import-from :datafly
-                :retrieve-one))
+                :retrieve-one
+                :execute))
 (in-package :quickdocs-updater)
 
 (defun update-dist (dist)
@@ -37,8 +40,19 @@
                   (depends-system (retrieve-system depends-system-name)))
               (create-dependency (system-id system) (system-id depends-system))))))
 
-      ;; TODO: cliki
-      )))
+      ;; Retrieve description and categories from cliki and update DB.
+      (multiple-value-bind (description categories)
+          (cliki-project-info (project-name project))
+        (execute
+         (insert-into :project_cliki_description
+           (set= :project_id (project-id project)
+                 :description description)))
+        (dolist (category categories)
+          (execute
+           (insert-into :project_category
+             (set= :project_name (project-name project)
+                   :category category)))))))
+  t)
 
 (defun update-release (release &aux (release-info (release-info release)))
   (check-type release ql-dist:release)
