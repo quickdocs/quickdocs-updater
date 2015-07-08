@@ -4,7 +4,9 @@
 exec ros -Q -- $0 "$@"
 |#
 
-(ql:quickload :quickdocs-updater :silent t)
+(ql:quickload '(:datafly :quickdocs-updater) :silent t)
 
 (defun main (&optional (ql-dist-version (ql-dist:version (ql-dist:dist "quicklisp"))))
+  (datafly:connect-toplevel :mysql :database-name "quickdocs"
+                            :username "root")
   (quickdocs-updater:update-dist ql-dist-version))
