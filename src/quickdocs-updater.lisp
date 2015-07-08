@@ -80,11 +80,11 @@
                                              :filename (getf release-info :readme-file)
                                              :raw (getf release-info :readme)
                                              :converted (convert-readme (make-string-input-stream (getf release-info :readme))
-                                                                        :type (first
-                                                                               (split-sequence #\.
-                                                                                               (getf release-info :readme-file)
-                                                                                               :from-end t
-                                                                                               :count 1))))))))
+                                                                        (first
+                                                                         (split-sequence #\.
+                                                                                         (getf release-info :readme-file)
+                                                                                         :from-end t
+                                                                                         :count 1))))))))
     (dolist (system-info (getf release-info :systems))
       (create-system :project-id (project-id project)
                      :name (getf system-info :name)

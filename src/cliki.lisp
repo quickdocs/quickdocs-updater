@@ -28,7 +28,7 @@
                       :timeout 60)))))))
 
 (defun cliki-project-info (project-name)
-  (let ((html (retrieve-project-page project-name)))
+  (let ((html (retrieve-cliki-project-page project-name)))
     (when html
       (values
        (parse-description html)
