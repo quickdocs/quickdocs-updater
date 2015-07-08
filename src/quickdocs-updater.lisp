@@ -35,36 +35,51 @@
   (format *trace-output* "~&Extracting dist ~S~%" ql-dist-version)
   (run-extract-dist ql-dist-version)
   ;; Update database
-  (dolist (release (ql-dist-releases ql-dist-version))
-    (let (project)
+  (let (project
+        (releases (ql-dist-releases ql-dist-version)))
+    (dolist (release releases)
       ;; Update project
-      (setf project (update-release release))
-      ;; Update dependencies
-      (flet ((retrieve-system (system-name)
-               (retrieve-one
-                (select :*
-                  (from :system)
-                  (where (:and (:= :name system-name)
-                               (:= :project_id (project-id project))))))))
+      (setf project (update-release release)))
+
+    ;; Update dependencies
+    (flet ((retrieve-system (system-name)
+             (retrieve-one
+              (select :*
+                (from :system)
+                (where (:and (:= :name system-name)
+                             (:= :project_id (project-id project))))
+                (limit 1))
+              :as 'quickdocs-database:system)))
+      (dolist (release releases)
         (dolist (system (getf (release-info release) :systems))
           (dolist (depends-system-name (append (getf system :depends-on)
                                                (getf system :defsystem-depends-on)))
             (let ((system (retrieve-system (getf system :name)))
                   (depends-system (retrieve-system depends-system-name)))
-              (create-dependency (system-id system) (system-id depends-system))))))
+              (create-dependency (system-id system) (system-id depends-system)))))))
 
-      ;; Retrieve description and categories from cliki and update DB.
-      (multiple-value-bind (description categories)
-          (cliki-project-info (project-name project))
-        (execute
-         (insert-into :project_cliki_description
-           (set= :project_id (project-id project)
-                 :description description)))
-        (dolist (category categories)
-          (execute
-           (insert-into :project_category
-             (set= :project_name (project-name project)
-                   :category category)))))))
+    ;; Retrieve description and categories from cliki and update DB.
+    (flet ((retrieve-project (project-name)
+             (retrieve-one
+              (select :*
+                (from :project)
+                (where (:and (:= :ql_dist_version ql-dist-version)
+                             (:= :name project-name)))
+                (limit 1))
+              :as 'quickdocs-database:project)))
+      (dolist (release releases)
+        (let ((project (retrieve-project release)))
+          (multiple-value-bind (description categories)
+              (cliki-project-info (project-name project))
+            (execute
+             (insert-into :project_cliki_description
+               (set= :project_id (project-id project)
+                     :description description)))
+            (dolist (category categories)
+              (execute
+               (insert-into :project_category
+                 (set= :project_name (project-name project)
+                       :category category)))))))))
   t)
 
 (defun update-release (release &aux (release-info (release-info release)))
