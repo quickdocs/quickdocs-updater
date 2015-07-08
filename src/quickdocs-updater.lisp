@@ -2,6 +2,7 @@
 (defpackage quickdocs-updater
   (:use :cl
         :quickdocs-database
+        :split-sequence
         :sxql)
   (:import-from :quickdocs-updater.extracter
                 :run-extract-dist
@@ -14,15 +15,27 @@
                 :cliki-project-info)
   (:import-from :datafly
                 :retrieve-one
-                :execute))
+                :execute)
+  (:export :update-dist
+           :update-release))
 (in-package :quickdocs-updater)
 
-(defun update-dist (dist)
-  (check-type dist ql-dist:dist)
+(defun ql-dist-releases (ql-dist-version)
+  (let ((releases.txt
+          (dex:get (format nil "http://beta.quicklisp.org/dist/quicklisp/~A/releases.txt"
+                           ql-dist-version))))
+    (loop for line in (split-sequence #\Newline releases.txt)
+          when (and (not (= (length line) 0))
+                    (not (char= (aref line 0) #\#)))
+            collect (first (split-sequence #\Space line :count 1)))))
+
+(defun update-dist (ql-dist-version)
+  (check-type ql-dist-version string)
   ;; Extract dist
-  (run-extract-dist dist)
+  (format *trace-output* "~&Extracting dist ~S~%" ql-dist-version)
+  (run-extract-dist ql-dist-version)
   ;; Update database
-  (dolist (release (ql-dist:provided-releases dist))
+  (dolist (release (ql-dist-releases ql-dist-version))
     (let (project)
       ;; Update project
       (setf project (update-release release))

@@ -11,8 +11,9 @@
 (defparameter *extract-result-directory*
   (asdf:system-relative-pathname :quickdocs-updater #P"dists/"))
 
-(defun extract-result-directory (dist)
-  (merge-pathnames (ql-dist:version dist) *extract-result-directory*))
+(defun extract-result-directory (ql-dist-version)
+  (check-type ql-dist-version string)
+  (merge-pathnames ql-dist-version *extract-result-directory*))
 
 (defun extract-result-of-release (release)
   (merge-pathnames (ql-dist:name release) (extract-result-directory (ql-dist:dist release))))
@@ -20,14 +21,14 @@
 (defun extractedp (dist)
   (uiop:directory-exists-p (extract-result-directory dist)))
 
-(defun run-extract-dist (dist)
+(defun run-extract-dist (ql-dist-version)
   (let ((extract-dist-script (asdf:system-relative-pathname #P"scripts/extract-dist" :quickdocs-extracter))
         (*default-pathname-defaults*
           (uiop:pathname-parent-directory-pathname *extract-result-directory*)))
-    (uiop:run-program `(,extract-dist-script ,(ql-dist:version dist))
+    (uiop:run-program `(,extract-dist-script ,ql-dist-version)
                       :output *standard-output*
                       :error-output *error-output*))
-  (extract-result-directory dist))
+  (extract-result-directory ql-dist-version))
 
 (defun release-info (release)
   (check-type release ql-dist:release)
