@@ -31,9 +31,6 @@
 
 (defun update-dist (ql-dist-version)
   (check-type ql-dist-version string)
-  ;; Extract dist
-  (format *trace-output* "~&Extracting dist ~S~%" ql-dist-version)
-  (run-extract-dist ql-dist-version)
   ;; Update database
   (let ((releases (ql-dist-releases ql-dist-version)))
     ;; Update 'project' and 'system' tables
