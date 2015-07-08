@@ -79,7 +79,8 @@
               (execute
                (insert-into :project_category
                  (set= :project_name (project-name project)
-                       :category category)))))))))
+                       :category category))))))
+        (sleep 3))))
   t)
 
 (defun update-release (release &aux (release-info (release-info release)))
