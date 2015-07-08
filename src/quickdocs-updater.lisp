@@ -35,31 +35,20 @@
   (format *trace-output* "~&Extracting dist ~S~%" ql-dist-version)
   (run-extract-dist ql-dist-version)
   ;; Update database
-  (let (project
-        (releases (ql-dist-releases ql-dist-version)))
+  (let ((releases (ql-dist-releases ql-dist-version)))
+    ;; Update 'project' and 'system' tables
     (dolist (release releases)
-      ;; Update project
-      (setf project (update-release release)))
+      (update-release release))
 
-    ;; Update dependencies
-    (flet ((retrieve-system (system-name)
+    (flet ((retrieve-system (system-name project-id)
              (retrieve-one
               (select :*
                 (from :system)
                 (where (:and (:= :name system-name)
-                             (:= :project_id (project-id project))))
+                             (:= :project_id project-id)))
                 (limit 1))
-              :as 'quickdocs-database:system)))
-      (dolist (release releases)
-        (dolist (system (getf (release-info release) :systems))
-          (dolist (depends-system-name (append (getf system :depends-on)
-                                               (getf system :defsystem-depends-on)))
-            (let ((system (retrieve-system (getf system :name)))
-                  (depends-system (retrieve-system depends-system-name)))
-              (create-dependency (system-id system) (system-id depends-system)))))))
-
-    ;; Retrieve description and categories from cliki and update DB.
-    (flet ((retrieve-project (project-name)
+              :as 'quickdocs-database:system))
+           (retrieve-project (project-name)
              (retrieve-one
               (select :*
                 (from :project)
@@ -67,6 +56,18 @@
                              (:= :name project-name)))
                 (limit 1))
               :as 'quickdocs-database:project)))
+
+      ;; Update dependencies
+      (dolist (release releases)
+        (let ((project (retrieve-project release)))
+          (dolist (system (getf (release-info release) :systems))
+            (dolist (depends-system-name (append (getf system :depends-on)
+                                                 (getf system :defsystem-depends-on)))
+              (let ((system (retrieve-system (getf system :name) (project-id project)))
+                    (depends-system (retrieve-system depends-system-name (project-id project))))
+                (create-dependency (system-id system) (system-id depends-system)))))))
+
+      ;; Retrieve description and categories from cliki and update DB.
       (dolist (release releases)
         (let ((project (retrieve-project release)))
           (multiple-value-bind (description categories)
