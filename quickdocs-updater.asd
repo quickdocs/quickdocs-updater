@@ -18,6 +18,8 @@
   :license "BSD 2-Clause"
   :depends-on (:quickdocs-extracter
                :quickdocs-database
+               :datafly
+               :sxql
                :cl-ppcre
                :quri
                :uiop
@@ -25,7 +27,7 @@
                :split-sequence)
   :components ((:module "src"
                 :components
-                ((:file "quickdocs-updater" :depends-on ("extracter"))
+                ((:file "quickdocs-updater" :depends-on ("extracter" "release" "readme"))
                  (:file "release" :depends-on ("extracter"))
                  (:file "readme")
                  (:file "extracter"))))

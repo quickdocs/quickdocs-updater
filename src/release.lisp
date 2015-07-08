@@ -13,7 +13,7 @@
                 :ignore-some-conditions)
   (:export :release-version
            :primary-system
-           :project-homepage)
+           :release-repos-url)
   (:documentation "Function/method collections for Quicklisp releases."))
 (in-package :quickdocs-updater.release)
 
@@ -54,47 +54,37 @@
         (split-sequence #\Space data :count 2)
       (values type source-url))))
 
-(defun project-homepage (release)
+(defun release-repos-url (release)
   (check-type release ql-dist:release)
-  (let* ((release-info (release-info release))
-         (systems-info (getf release-info :systems)))
-    (or
-     ;; Use if :homepage exists in ASD files
-     (getf (find-if (lambda (info)
-                      (getf info :homepage))
-                    systems-info)
-           :homepage)
-
-     ;; Use the repository URL if it's on some popular services, like GitHub or BitBucket
-     (multiple-value-bind (type source-url)
-         (project-source-info release)
-       (ignore-some-conditions (quri:uri-error)
-         (let* ((uri (quri:uri source-url))
-                (domain (quri:uri-domain uri)))
-           (cond
-             ((string= domain "github.com")
-              (let ((repos-id (ppcre:regex-replace "\\.[^\\.]*$" (quri:uri-path uri) "")))
-                ;; TODO: request website URL to GitHub
-                (concatenate 'string
-                             "https://github.com"
-                             repos-id)))
-             ((string= domain "bitbucket.org")
-              ;; TODO: request website URL to BitBucket
-              source-url)
-             ((string= domain "gitlab.common-lisp.net")
-              (let ((repos-id (ppcre:regex-replace "\\.[^\\.]*$" (quri:uri-path uri) "")))
-                (concatenate 'string
-                             "http://gitlab.common-lisp.net"
-                             repos-id)))
-             ((string= domain "common-lisp.net")
-              (let ((match (ppcre:scan-to-strings "://common-lisp\\.net/project/([^\\/]+)" source-url)))
-                (format nil "http://common-lisp.net/project/~A"
-                        (quri:url-encode
-                         (if match
-                             (aref match 0)
-                             (ql-dist:project-name release))
-                         :encoding :utf-8))))
-             ((or (string= domain "weitz.de")
-                  (string= type "ediware-http"))
-              (format nil "http://weitz.de/~A/"
-                      (quri:url-encode (ql-dist:project-name release) :encoding :utf-8))))))))))
+  (multiple-value-bind (type source-url)
+      (project-source-info release)
+    (ignore-some-conditions (quri:uri-error)
+      (let* ((uri (quri:uri source-url))
+             (domain (quri:uri-domain uri)))
+        (cond
+          ((string= domain "github.com")
+           (let ((repos-id (ppcre:regex-replace "\\.[^\\.]*$" (quri:uri-path uri) "")))
+             ;; TODO: request website URL to GitHub
+             (concatenate 'string
+                          "https://github.com"
+                          repos-id)))
+          ((string= domain "bitbucket.org")
+           ;; TODO: request website URL to BitBucket
+           source-url)
+          ((string= domain "gitlab.common-lisp.net")
+           (let ((repos-id (ppcre:regex-replace "\\.[^\\.]*$" (quri:uri-path uri) "")))
+             (concatenate 'string
+                          "http://gitlab.common-lisp.net"
+                          repos-id)))
+          ((string= domain "common-lisp.net")
+           (let ((match (ppcre:scan-to-strings "://common-lisp\\.net/project/([^\\/]+)" source-url)))
+             (format nil "http://common-lisp.net/project/~A"
+                     (quri:url-encode
+                      (if match
+                          (aref match 0)
+                          (ql-dist:project-name release))
+                      :encoding :utf-8))))
+          ((or (string= domain "weitz.de")
+               (string= type "ediware-http"))
+           (format nil "http://weitz.de/~A/"
+                   (quri:url-encode (ql-dist:project-name release) :encoding :utf-8))))))))
