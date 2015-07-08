@@ -22,7 +22,7 @@
   (uiop:directory-exists-p (extract-result-directory dist)))
 
 (defun run-extract-dist (ql-dist-version)
-  (let ((extract-dist-script (asdf:system-relative-pathname #P"scripts/extract-dist" :quickdocs-extracter))
+  (let ((extract-dist-script (asdf:system-relative-pathname :quickdocs-extracter #P"scripts/extract-dist"))
         (*default-pathname-defaults*
           (uiop:pathname-parent-directory-pathname *extract-result-directory*)))
     (uiop:run-program `(,extract-dist-script ,ql-dist-version)
