@@ -10,7 +10,7 @@
   (:import-from :quickdocs-updater.release
                 :release-repos-url)
   (:import-from :quickdocs-updater.readme 
-                :pandoc)
+                :convert-readme)
   (:import-from :quickdocs-updater.cliki
                 :cliki-project-info)
   (:import-from :datafly
@@ -75,10 +75,16 @@
                           :release-version (getf release-info :release-version)
                           :repos-url (release-repos-url release)
                           :archive-url (ql-dist:archive-url release)
-                          :project-readme (make-project-readme
-                                           :filename (getf release-info :readme-file)
-                                           :raw (getf release-info :readme)
-                                           :converted (pandoc (make-string-input-stream (getf release-info :readme)))))))
+                          :project-readme (when (getf release-info :readme-file)
+                                            (make-project-readme
+                                             :filename (getf release-info :readme-file)
+                                             :raw (getf release-info :readme)
+                                             :converted (convert-readme (make-string-input-stream (getf release-info :readme))
+                                                                        :type (first
+                                                                               (split-sequence #\.
+                                                                                               (getf release-info :readme-file)
+                                                                                               :from-end t
+                                                                                               :count 1))))))))
     (dolist (system-info (getf release-info :systems))
       (create-system :project-id (project-id project)
                      :name (getf system-info :name)
