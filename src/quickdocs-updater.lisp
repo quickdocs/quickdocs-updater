@@ -13,6 +13,8 @@
                 :convert-readme)
   (:import-from :quickdocs-updater.cliki
                 :cliki-project-info)
+  (:import-from :quickdocs-updater.http
+                :send-get)
   (:import-from :datafly
                 :retrieve-one
                 :execute)
@@ -22,8 +24,8 @@
 
 (defun ql-dist-releases (ql-dist-version)
   (let ((releases.txt
-          (dex:get (format nil "http://beta.quicklisp.org/dist/quicklisp/~A/releases.txt"
-                           ql-dist-version))))
+          (send-get (format nil "http://beta.quicklisp.org/dist/quicklisp/~A/releases.txt"
+                            ql-dist-version))))
     (loop for line in (split-sequence #\Newline releases.txt)
           when (and (not (= (length line) 0))
                     (not (char= (aref line 0) #\#)))

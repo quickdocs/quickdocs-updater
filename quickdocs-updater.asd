@@ -33,8 +33,9 @@
                 ((:file "quickdocs-updater" :depends-on ("extracter" "release" "readme" "cliki"))
                  (:file "release" :depends-on ("extracter"))
                  (:file "readme")
-                 (:file "cliki")
-                 (:file "extracter"))))
+                 (:file "cliki" :depends-on ("http"))
+                 (:file "extracter")
+                 (:file "http"))))
   :description "Updates Quickdocs database"
   :long-description
   #.(with-open-file (stream (merge-pathnames

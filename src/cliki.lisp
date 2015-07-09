@@ -1,6 +1,8 @@
 (in-package :cl-user)
 (defpackage quickdocs-updater.cliki
   (:use :cl)
+  (:import-from :quickdocs-updater.http
+                :send-get)
   (:import-from :quri
                 :url-encode)
   (:export :cliki-project-info))
@@ -24,8 +26,7 @@
                                  (sleep (* 3 (incf try)))
                                  (go retry)))))))
            (return
-             (dex:get (project-page-url project-name)
-                      :timeout 60)))))))
+             (send-get (project-page-url project-name))))))))
 
 (defun cliki-project-info (project-name)
   (let ((html (retrieve-cliki-project-page project-name)))
