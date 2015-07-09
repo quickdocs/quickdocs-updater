@@ -5,7 +5,6 @@
         :split-sequence
         :sxql)
   (:import-from :quickdocs-updater.extracter
-                :run-extract-dist
                 :release-info)
   (:import-from :quickdocs-updater.release
                 :release-repos-url)

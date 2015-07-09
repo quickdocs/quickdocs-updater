@@ -4,10 +4,16 @@
 exec ros -Q -- $0 "$@"
 |#
 
-(ql:quickload '(:datafly :quickdocs-updater) :silent t)
+(ql:quickload '(:datafly :quickdocs-updater :uiop) :silent t)
 
-(defun main (&optional (ql-dist-version (ql-dist:version (ql-dist:dist "quicklisp"))))
-  (run-extract-dist ql-dist-version)
+(defun main (dists-dir &optional (ql-dist-version (ql-dist:version (ql-dist:dist "quicklisp")))
+             &aux (dists-dir (uiop:ensure-directory-pathname dists-dir)))
+  (unless (uiop:directory-exists-p (merge-pathnames ql-dist-version dists-dir))
+    (error "Quicklisp dist ~S is not extracted in '~A' yet." ql-dist-version dists-dir))
+  (unless (uiop:directory-exists-p (merge-pathnames (format nil "~A/releases/" ql-dist-version)
+                                                    dists-dir))
+    (error "Invalid dists directory: ~A" dists-dir))
+  (setf quickdocs-updater.extracter:*extract-dists-directory* dists-dir)
   (datafly:connect-toplevel :mysql :database-name "quickdocs"
                             :username "root")
   (quickdocs-updater:update-dist ql-dist-version))
