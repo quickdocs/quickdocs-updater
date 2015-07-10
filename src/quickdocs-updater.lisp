@@ -35,6 +35,7 @@
   ;; Update database
   (let ((releases (ql-dist-releases ql-dist-version)))
     ;; Update 'project' and 'system' tables
+    (format *error-output* "~&Updating 'project' and 'system'...~%")
     (dolist (release releases)
       (update-release release))
 
@@ -56,6 +57,7 @@
               :as 'quickdocs-database:project)))
 
       ;; Update dependencies
+      (format *error-output* "~&Updating dependencies...~%")
       (dolist (release releases)
         (let ((project (retrieve-project release)))
           (dolist (system (getf (release-info release) :systems))
@@ -66,8 +68,10 @@
                 (create-dependency (system-id system) (system-id depends-system)))))))
 
       ;; Retrieve description and categories from cliki and update DB.
+      (format *error-output* "~&Retrieving description and categories from CLiki...~%")
       (dolist (release releases)
         (let ((project (retrieve-project release)))
+          (format *error-output* "~&~A...~%" (project-name project))
           (multiple-value-bind (description categories)
               (cliki-project-info (project-name project))
             (execute
