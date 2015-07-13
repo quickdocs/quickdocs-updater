@@ -5,9 +5,6 @@
                 :send-get)
   (:import-from :quri
                 :url-encode)
-  (:import-from :alexandria
-                :once-only
-                :with-gensyms)
   (:export :cliki-project-info))
 (in-package :quickdocs-updater.cliki)
 
@@ -19,29 +16,11 @@
   (format nil "http://cliki.net/site/history?article=~A"
           (quri:url-encode project-name :encoding :utf-8)))
 
-(defmacro with-retry (attempts &body body)
-  (with-gensyms (try retry return-block)
-    (once-only (attempts)
-      `(let ((,try 0))
-         (block ,return-block
-           (tagbody
-              ,retry
-              (handler-bind ((dex:http-request-failed
-                               (lambda (e)
-                                 (case (dex:response-status e)
-                                   (404 (return-from ,return-block nil))
-                                   (otherwise
-                                    (when (<= ,try ,attempts)
-                                      (sleep (* 3 (incf ,try)))
-                                      (go ,retry)))))))
-                (return-from ,return-block
-                  (progn ,@body)))))))))
-
 (defun retrieve-cliki-project-page (project-name)
-  (with-retry 5 (send-get (project-page-url project-name))))
+  (send-get (project-page-url project-name) :retries 5))
 
 (defun retrieve-cliki-project-history (project-name)
-  (with-retry 5 (send-get (project-history-url project-name))))
+  (send-get (project-history-url project-name) :retries 5))
 
 (defun cliki-project-last-updated-at (project-name)
   (let ((body (retrieve-cliki-project-history project-name)))
