@@ -31,7 +31,7 @@
   :components ((:module "src"
                 :components
                 ((:file "quickdocs-updater" :depends-on ("extracter" "release" "readme" "cliki"))
-                 (:file "release" :depends-on ("extracter"))
+                 (:file "release" :depends-on ("extracter" "http"))
                  (:file "readme")
                  (:file "cliki" :depends-on ("http"))
                  (:file "extracter")

@@ -13,32 +13,19 @@
 
 (defun extract-result-directory (ql-dist-version)
   (check-type ql-dist-version string)
-  (merge-pathnames ql-dist-version *extract-dists-directory*))
+  (uiop:ensure-directory-pathname (merge-pathnames ql-dist-version *extract-dists-directory*)))
 
-(defun extract-result-of-release (release)
-  (merge-pathnames (format nil "releases/~A" (ql-dist:name release))
-                   (extract-result-directory (ql-dist:dist release))))
+(defun extract-result-of-release (release ql-dist-version)
+  (merge-pathnames (format nil "releases/~A" release)
+                   (extract-result-directory ql-dist-version)))
 
 (defun extractedp (dist)
   (uiop:directory-exists-p (extract-result-directory dist)))
 
-(defun release-info (release)
-  (check-type release ql-dist:release)
-  (let ((result-file (extract-result-of-release release)))
+(defun release-info (release ql-dist-version)
+  (check-type release string)
+  (let ((result-file (extract-result-of-release release ql-dist-version)))
     (unless (uiop:file-exists-p result-file)
-      (restart-case
-          (error "Extracted release info of ~S does not exist." (ql-dist:name release))
-        ;; For testing mainly.
-        (extract-now ()
-          :report "Extract it now in the current thread"
-          (return-from release-info
-            (getf (quickdocs-extracter:serialize-release
-                   (ql-dist:name release)
-                   (ql-dist:dist release))
-                  :systems)))))
-    (with-open-file (in result-file)
-      (uiop:with-safe-io-syntax ()
-        (loop with eof = '#:eof
-              for form = (read in nil eof)
-              until (eq form eof)
-              collect form)))))
+      (error "Extracted release info of ~S does not exist at '~A'." release
+             result-file))
+    (ignore-errors (uiop:read-file-form result-file))))
