@@ -132,6 +132,7 @@
     ;; TODO: Failed release should also be stored in database somehow.
     (warn "The extracted info of ~S cannot be read. Skipping." release)
     (return-from update-release))
+  (format *error-output* "~&Updating ~S...~%" release)
   (let ((project
           (create-project :ql-dist-version ql-dist-version
                           :name (getf release-info :name)
