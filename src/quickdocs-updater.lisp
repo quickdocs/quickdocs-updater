@@ -117,7 +117,7 @@
                          (where (:= :project_name release))))
                       (dolist (category (getf cliki-info :categories))
                         (execute
-                         (insert-into :project_category
+                         (insert-into :cliki_project_category
                            (set= :project_name release
                                  :category category)))))
                     (princ "none"))))
