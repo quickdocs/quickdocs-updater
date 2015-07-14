@@ -12,12 +12,6 @@
   (format nil "Quickdocs-Updater/~A (http://quickdocs.org)"
           (asdf:component-version (asdf:find-system :quickdocs-updater))))
 
-(defun send-get (url &key (timeout 60) retries)
-  (with-retry (or retries 0)
-    (dex:get url
-             :headers `(("User-Agent" . ,*user-agent*))
-             :timeout timeout)))
-
 (defmacro with-retry (retries &body body)
   (with-gensyms (try retry return-block)
     (once-only (retries)
@@ -35,3 +29,9 @@
                                       (go ,retry)))))))
                 (return-from ,return-block
                   (progn ,@body)))))))))
+
+(defun send-get (url &key (timeout 60) retries)
+  (with-retry (or retries 0)
+    (dex:get url
+             :headers `(("User-Agent" . ,*user-agent*))
+             :timeout timeout)))
