@@ -61,7 +61,14 @@
           (dolist (system-info (getf (release-info release ql-dist-version) :systems))
             (flet ((create (system-name depends-system-name &optional is-for-defsystem)
                      (let ((system (retrieve-system system-name (project-id project)))
-                           (depends-system (retrieve-system depends-system-name (project-id project))))
+                           (depends-system
+                             (retrieve-one
+                              (select :system.*
+                                (from :system)
+                                (left-join :project :on (:= :system.project_id :project.id))
+                                (where (:and (:= :ql_dist_version ql-dist-version)
+                                             (:= :system.name depends-system-name))))
+                              :as 'quickdocs-database:system)))
                        (cond
                          ((and system depends-system)
                           (create-dependency (system-id system) (system-id depends-system)
