@@ -20,7 +20,11 @@
   (send-get (project-page-url project-name) :retries 5))
 
 (defun retrieve-cliki-project-history (project-name)
-  (send-get (project-history-url project-name) :retries 5))
+  (handler-bind ((dex:http-request-failed
+                   (lambda (e)
+                     (when (= (dex:response-status e) 500)
+                       (return-from retrieve-cliki-project-history nil)))))
+    (send-get (project-history-url project-name) :retries 5)))
 
 (defun cliki-project-last-updated-at (project-name)
   (let ((body (retrieve-cliki-project-history project-name)))
