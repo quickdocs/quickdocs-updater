@@ -26,7 +26,16 @@
                                    (otherwise
                                     (when (< ,try ,retries)
                                       (sleep (* 3 (incf ,try)))
-                                      (go ,retry)))))))
+                                      (go ,retry))))))
+                             (usocket:ns-error
+                               (lambda (e)
+                                 (when (< ,try ,retries)
+                                   (let ((wait (* 10 (incf ,try))))
+                                     (format *error-output* "~&~A~2%Waiting ~D seconds till retrying...~%"
+                                             e
+                                             wait)
+                                     (sleep wait)
+                                     (go ,retry))))))
                 (return-from ,return-block
                   (progn ,@body)))))))))
 
