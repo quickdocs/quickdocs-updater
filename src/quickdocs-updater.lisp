@@ -37,94 +37,72 @@
     (dolist (release releases)
       (update-release release ql-dist-version))
 
-    (flet ((retrieve-system (system-name project-id)
-             (retrieve-one
-              (select :*
-                (from :system)
-                (where (:and (:= :name system-name)
-                             (:= :project_id project-id)))
-                (limit 1))
-              :as 'quickdocs-database:system))
-           (retrieve-project (project-name)
-             (retrieve-one
-              (select :*
-                (from :project)
-                (where (:and (:= :ql_dist_version ql-dist-version)
-                             (:= :name project-name)))
-                (limit 1))
-              :as 'quickdocs-database:project)))
-
-      ;; Update dependencies
-      (format *error-output* "~2&Updating dependencies...~%")
-      (dolist (release releases)
-        (let ((project (retrieve-project release)))
-          (dolist (system-info (getf (release-info release ql-dist-version) :systems))
-            (flet ((create (system-name depends-system-name &optional is-for-defsystem)
-                     (let ((system (retrieve-system system-name (project-id project)))
-                           (depends-system
-                             (retrieve-one
-                              (select :system.*
-                                (from :system)
-                                (left-join :project :on (:= :system.project_id :project.id))
-                                (where (:and (:= :ql_dist_version ql-dist-version)
-                                             (:= :system.name depends-system-name))))
-                              :as 'quickdocs-database:system)))
-                       (cond
-                         ((and system depends-system)
-                          (create-dependency (system-id system) (system-id depends-system)
-                                             :is-for-defsystem is-for-defsystem))
+    ;; Update dependencies
+    (format *error-output* "~2&Updating dependencies...~%")
+    (dolist (release releases)
+      (let ((project (retrieve-project release :ql-dist-version ql-dist-version)))
+        (dolist (system-info (getf (release-info release ql-dist-version) :systems))
+          (flet ((create (system-name depends-system-name &optional is-for-defsystem)
+                   (let ((system (find-system-in-project project system-name))
                          (depends-system
-                          (warn "~S doesn't exist in DB. Probably it was failed to update. Ignoring."
-                                system-name))
-                         (system
-                          (warn "~S which ~S depends on doesn't exist. Ignoring."
-                                depends-system-name
-                                system-name))))))
-              (dolist (depends-system-name (getf system-info :depends-on))
-                (create (getf system-info :name) depends-system-name))
-              (dolist (depends-system-name (getf system-info :defsystem-depends-on))
-                (create (getf system-info :name) depends-system-name t))))))
+                           (retrieve-system depends-system-name :ql-dist-version ql-dist-version)))
+                     (cond
+                       ((and system depends-system)
+                        (create-dependency (system-id system) (system-id depends-system)
+                                           :is-for-defsystem is-for-defsystem))
+                       (depends-system
+                        (warn "~S doesn't exist in DB. Probably it was failed to update. Ignoring."
+                              system-name))
+                       (system
+                        (warn "~S which ~S depends on doesn't exist. Ignoring."
+                              depends-system-name
+                              system-name))))))
+            (dolist (depends-system-name (getf system-info :depends-on))
+              (create (getf system-info :name) depends-system-name))
+            (dolist (depends-system-name (getf system-info :defsystem-depends-on))
+              (create (getf system-info :name) depends-system-name t))))))
 
-      ;; Retrieve description and categories from cliki and update DB.
-      (format *error-output* "~2&Retrieving description and categories from CLiki...~%")
-      (dolist (release releases)
-        (let ((project (retrieve-project release)))
-          (when project
-            (format *error-output* "~&Retrieving ~S..." release) (force-output *error-output*)
-            (let ((updated-at (retrieve-one-value
-                               (select :updated_at
-                                 (from :cliki)
-                                 (where (:= :project_name release))
-                                 (limit 1))
-                               :updated-at)))
-              (multiple-value-bind (cliki-info successp)
-                  (updated-cliki-project-info release updated-at)
-                (if successp
-                    (when cliki-info ;; means if the page is new or updated
-                      (if updated-at
-                          (execute
-                           (update :cliki
-                             (set= :body (getf cliki-info :body)
-                                   :updated_at (getf cliki-info :updated-at))
-                             (where (:= :project_name release))))
-                          (execute
-                           (insert-into :cliki
-                             (set= :project_name release
-                                   :body (getf cliki-info :body)
-                                   :updated_at (getf cliki-info :updated-at)))))
-                      (execute
-                       (delete-from :cliki_project_category
-                         (where (:= :project_name release))))
-                      (dolist (category (getf cliki-info :categories))
+    ;; Retrieve description and categories from cliki and update DB.
+    (format *error-output* "~2&Retrieving description and categories from CLiki...~%")
+    (dolist (release releases)
+      (let ((project (retrieve-project release :ql-dist-version ql-dist-version)))
+        (when project
+          (format *error-output* "~&Retrieving ~S..." release) (force-output *error-output*)
+          (let ((updated-at (retrieve-one-value
+                             (select :updated_at
+                               (from :cliki)
+                               (where (:= :project_name release))
+                               (limit 1))
+                             :updated-at)))
+            (multiple-value-bind (cliki-info successp)
+                (updated-cliki-project-info release updated-at)
+              (if successp
+                  (when cliki-info ;; means if the page is new or updated
+                    (if updated-at
                         (execute
-                         (insert-into :cliki_project_category
+                         (update :cliki
+                           (set= :body (getf cliki-info :body)
+                                 :updated_at (getf cliki-info :updated-at))
+                           (where (:= :project_name release))))
+                        (execute
+                         (insert-into :cliki
                            (set= :project_name release
-                                 :category category)))))
-                    (princ "none"))))
-            (fresh-line)
-            (sleep 3))))
+                                 :body (getf cliki-info :body)
+                                 :updated_at (getf cliki-info :updated-at)))))
+                    (execute
+                     (delete-from :cliki_project_category
+                       (where (:= :project_name release))))
+                    (dolist (category (getf cliki-info :categories))
+                      (execute
+                       (insert-into :cliki_project_category
+                         (set= :project_name release
+                               :category category)))))
+                  (princ "none" *error-output*))))
+          (fresh-line *error-output*)
+          (sleep 3))))
 
-      (format *error-output* "~&Done.~%")))
+    (setf (preference "ql-dist-version") ql-dist-version)
+    (format *error-output* "~&Done.~%"))
   t)
 
 (defun update-release (release ql-dist-version &aux (release-info (release-info release ql-dist-version)))
