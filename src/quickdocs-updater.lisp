@@ -170,10 +170,11 @@
 
 (defun update-repos-info (ql-dist-version)
   (format *error-output* "~2&Updating repository informations...~%")
-  (execute (delete-from :repos_info))
   (dolist (release (ql-dist-releases ql-dist-version))
+    (execute (delete-from :repos_info
+               (where (:= :project_name release))))
     (let ((repos-url (release-repos-url release)))
-      (format *error-output* "~&Updating ~S...~%" release)
+      (format *error-output* "~&Updating ~S..." release) (force-output *error-output*)
       (when repos-url
         (let* ((uri (quri:uri repos-url))
                (domain (quri:uri-domain uri))
@@ -184,17 +185,19 @@
                    ((string= domain "bitbucket.org")
                     (repos-info :bitbucket (subseq (quri:uri-path uri) 1))))))
           (when repos-info
+            (format *error-output* "~(~A~)" (getf repos-info :type))
             (execute
              (insert-into :repos_info
                (set= :project_name release
-                     :type         (getf repos-info :type)
-                     :repos-id     (getf repos-info :repos-id)
+                     :type         (string-downcase (getf repos-info :type))
+                     :repos_id     (getf repos-info :repos-id)
                      :description  (getf repos-info :description)
                      :homepage_url (getf repos-info :homepage-url)
                      :watch_count  (getf repos-info :watch-count)
                      :forks_count  (getf repos-info :forks-count)
                      :stars_count  (getf repos-info :stars-count)
                      :created_at   (getf repos-info :created-at)
-                     :updated_at   (getf repos-info :updated-at))))))))
-    (sleep 1))
+                     :updated_at   (getf repos-info :updated-at))))))
+        (sleep 1)))
+    (fresh-line *error-output*))
   t)
