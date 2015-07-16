@@ -39,30 +39,37 @@
 (defun repos-info (type repos-id)
   (flet ((assocdr (key info)
            (cdr (assoc key info :test #'string=))))
-    (ecase type
-      (:github
-       (let ((info (github-repos-info repos-id)))
-         (list :type :github
-               :repos-id repos-id
-               :description  (assocdr "description" info)
-               :homepage-url (assocdr "homepage" info)
-               :watch-count  (assocdr "watchers_count" info)
-               :forks-count  (assocdr "forks" info)
-               :stars-count  (assocdr "stargazers_count" info)
-               :created-at   (local-time:timestamp-to-universal
-                              (local-time:parse-timestring (assocdr "created_at" info)))
-               :updated-at   (local-time:timestamp-to-universal
-                              (local-time:parse-timestring (assocdr "updated_at" info))))))
-      (:bitbucket
-       (let ((info (bitbucket-repos-info repos-id)))
-         (list :type :bitbucket
-               :repos-id repos-id
-               :description  (assocdr "description" info)
-               :homepage-url (assocdr "website" info)
-               :watch-count  (assocdr "followers_count" info)
-               :forks-count  (assocdr "forks_count" info)
-               :stars-count  nil
-               :created-at   (local-time:timestamp-to-universal
-                              (utc-date-to-timestamp (assocdr "utc_created_on" info)))
-               :updated-at   (local-time:timestamp-to-universal
-                              (utc-date-to-timestamp (assocdr "utc_last_updated" info)))))))))
+    (handler-bind ((dex:http-request-not-found
+                     (lambda (e)
+                       (warn "~S is not found at ~S." repos-id (dex:request-uri e))
+                       (return-from repos-info nil)))
+                   (dex:http-request-failed (dex:retry-request 5)))
+      (ecase type
+        (:github
+         (let ((info (github-repos-info repos-id)))
+           (when info
+             (list :type :github
+                   :repos-id repos-id
+                   :description  (assocdr "description" info)
+                   :homepage-url (assocdr "homepage" info)
+                   :watch-count  (assocdr "watchers_count" info)
+                   :forks-count  (assocdr "forks" info)
+                   :stars-count  (assocdr "stargazers_count" info)
+                   :created-at   (local-time:timestamp-to-universal
+                                  (local-time:parse-timestring (assocdr "created_at" info)))
+                   :updated-at   (local-time:timestamp-to-universal
+                                  (local-time:parse-timestring (assocdr "updated_at" info)))))))
+        (:bitbucket
+         (let ((info (bitbucket-repos-info repos-id)))
+           (when info
+             (list :type :bitbucket
+                   :repos-id repos-id
+                   :description  (assocdr "description" info)
+                   :homepage-url (assocdr "website" info)
+                   :watch-count  (assocdr "followers_count" info)
+                   :forks-count  (assocdr "forks_count" info)
+                   :stars-count  nil
+                   :created-at   (local-time:timestamp-to-universal
+                                  (utc-date-to-timestamp (assocdr "utc_created_on" info)))
+                   :updated-at   (local-time:timestamp-to-universal
+                                  (utc-date-to-timestamp (assocdr "utc_last_updated" info)))))))))))

@@ -173,15 +173,16 @@
   (execute (delete-from :repos_info))
   (dolist (release (ql-dist-releases ql-dist-version))
     (let ((repos-url (release-repos-url release)))
+      (format *error-output* "~&Updating ~S...~%" release)
       (when repos-url
         (let* ((uri (quri:uri repos-url))
                (domain (quri:uri-domain uri))
                (repos-info
                  (cond
                    ((string= domain "github.com")
-                    (repos-info :github (quri:uri-path uri)))
+                    (repos-info :github (subseq (quri:uri-path uri) 1)))
                    ((string= domain "bitbucket.org")
-                    (repos-info :bitbucket (quri:uri-path uri))))))
+                    (repos-info :bitbucket (subseq (quri:uri-path uri) 1))))))
           (when repos-info
             (execute
              (insert-into :repos_info
@@ -194,5 +195,6 @@
                      :forks_count  (getf repos-info :forks-count)
                      :stars_count  (getf repos-info :stars-count)
                      :created_at   (getf repos-info :created-at)
-                     :updated_at   (getf repos-info :updated-at)))))))))
+                     :updated_at   (getf repos-info :updated-at))))))))
+    (sleep 1))
   t)
