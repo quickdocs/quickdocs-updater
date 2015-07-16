@@ -93,10 +93,14 @@
 
 (defun project-source-info (release)
   (check-type release string)
-  (let ((data (uiop:read-file-string (project-source-txt release))))
-    (destructuring-bind (type source-url)
-        (split-sequence #\Space data :count 2)
-      (values type source-url))))
+  (flet ((chomp (str)
+           (if (char= (aref str (1- (length str))) #\Newline)
+               (subseq str 0 (1- (length str)))
+               str)))
+    (let ((data (uiop:read-file-string (project-source-txt release))))
+      (destructuring-bind (type source-url)
+          (split-sequence #\Space data :count 2)
+        (values type (chomp source-url))))))
 
 (defun release-homepage-url (release)
   (check-type release string)
