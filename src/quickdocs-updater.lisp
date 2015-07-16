@@ -62,12 +62,6 @@
             (dolist (depends-system-name (getf system-info :defsystem-depends-on))
               (create (getf system-info :name) depends-system-name t))))))
 
-    ;; Retrieve description and categories from cliki and update DB.
-    (format *error-output* "~2&Retrieving description and categories from CLiki...~%")
-    (dolist (release releases)
-      (update-cliki-info release ql-dist-version)
-      (sleep 3))
-
     (setf (preference "ql-dist-version") ql-dist-version)
     (format *error-output* "~&Done.~%"))
   t)
@@ -123,45 +117,49 @@
                                 :error-log (getf system-info :error-log))))
     project))
 
-(defun update-cliki-info (release ql-dist-version)
-  (let ((project (retrieve-project release :ql-dist-version ql-dist-version)))
-    (when project
-      (format *error-output* "~&Retrieving ~S..." release) (force-output *error-output*)
-      (let ((updated-at (retrieve-one-value
-                         (select :updated_at
-                           (from :cliki)
-                           (where (:= :project_name release))
-                           (limit 1))
-                         :updated-at)))
-        (multiple-value-bind (cliki-info successp)
-            (updated-cliki-project-info release updated-at)
-          (if successp
-              (when cliki-info ;; means if the page is new or updated
-                (cond
-                  ((getf cliki-info :body)
-                   (if updated-at
-                       (execute
-                        (update :cliki
-                          (set= :body (getf cliki-info :body)
-                                :updated_at (getf cliki-info :updated-at))
-                          (where (:= :project_name release))))
-                       (execute
-                        (insert-into :cliki
-                          (set= :project_name release
-                                :body (getf cliki-info :body)
-                                :updated_at (getf cliki-info :updated-at)))))
-                   (execute
-                    (delete-from :cliki_project_category
-                      (where (:= :project_name release))))
-                   (dolist (category (getf cliki-info :categories))
+(defun update-cliki-info (ql-dist-version)
+  (format *error-output* "~2&Retrieving description and categories from CLiki...~%")
+  (dolist (release (ql-dist-releases ql-dist-version))
+    (let ((project (retrieve-project release :ql-dist-version ql-dist-version)))
+      (when project
+        (format *error-output* "~&Retrieving ~S..." release) (force-output *error-output*)
+        (let ((updated-at (retrieve-one-value
+                           (select :updated_at
+                             (from :cliki)
+                             (where (:= :project_name release))
+                             (limit 1))
+                           :updated-at)))
+          (multiple-value-bind (cliki-info successp)
+              (updated-cliki-project-info release updated-at)
+            (if successp
+                (when cliki-info ;; means if the page is new or updated
+                  (cond
+                    ((getf cliki-info :body)
+                     (if updated-at
+                         (execute
+                          (update :cliki
+                            (set= :body (getf cliki-info :body)
+                                  :updated_at (getf cliki-info :updated-at))
+                            (where (:= :project_name release))))
+                         (execute
+                          (insert-into :cliki
+                            (set= :project_name release
+                                  :body (getf cliki-info :body)
+                                  :updated_at (getf cliki-info :updated-at)))))
                      (execute
-                      (insert-into :cliki_project_category
-                        (set= :project_name release
-                              :category category)))))
-                  (t
-                   (princ "deleted" *error-output*)
-                   (execute
-                    (delete-from :cliki
-                      (where (:= :project_name release)))))))
-              (princ "none" *error-output*))))
-      (fresh-line *error-output*))))
+                      (delete-from :cliki_project_category
+                        (where (:= :project_name release))))
+                     (dolist (category (getf cliki-info :categories))
+                       (execute
+                        (insert-into :cliki_project_category
+                          (set= :project_name release
+                                :category category)))))
+                    (t
+                     (princ "deleted" *error-output*)
+                     (execute
+                      (delete-from :cliki
+                        (where (:= :project_name release)))))))
+                (princ "none" *error-output*))))
+        (fresh-line *error-output*)))
+    (sleep 3))
+  t)

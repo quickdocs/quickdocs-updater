@@ -1,0 +1,12 @@
+#!/bin/sh
+#|-*- mode:lisp -*-|#
+#|
+exec ros -Q -- $0 "$@"
+|#
+
+(ql:quickload '(:datafly :quickdocs-updater :uiop) :silent t)
+
+(defun main (&optional (ql-dist-version (ql-dist:version (ql-dist:dist "quicklisp"))))
+  (datafly:connect-toplevel :mysql :database-name "quickdocs"
+                            :username "root")
+  (quickdocs-updater:update-cliki-info ql-dist-version))
