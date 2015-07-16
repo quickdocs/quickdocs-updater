@@ -25,7 +25,9 @@
   (:import-from :alexandria
                 :ensure-list)
   (:export :update-dist
-           :update-release))
+           :update-release
+           :update-cliki-info
+           :update-repos-info))
 (in-package :quickdocs-updater)
 
 (defun update-dist (ql-dist-version)
