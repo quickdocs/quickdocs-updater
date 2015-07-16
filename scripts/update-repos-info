@@ -9,4 +9,8 @@ exec ros -Q -- $0 "$@"
 (defun main (&optional (ql-dist-version (ql-dist:version (ql-dist:dist "quicklisp"))))
   (datafly:connect-toplevel :mysql :database-name "quickdocs"
                             :username "root")
+  (setf quickdocs-updater.repos:*github-access-token*
+        (uiop:getenv "GITHUB_ACCESS_TOKEN"))
+  (unless quickdocs-updater.repos:*github-access-token*
+    (error "GITHUB_ACCESS_TOKEN is not set."))
   (quickdocs-updater:update-repos-info ql-dist-version))

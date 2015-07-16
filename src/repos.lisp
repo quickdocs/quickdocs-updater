@@ -4,12 +4,21 @@
   (:import-from :quickdocs-updater.http
                 :send-get
                 :with-retry)
-  (:export :repos-info))
+  (:export :*github-access-token*
+           :repos-info))
 (in-package :quickdocs-updater.repos)
+
+(defvar *github-access-token* nil)
+
+(defun github-api-headers ()
+  (if *github-access-token*
+      `(("Authorization" . ,(format nil "Basic ~A"
+                                    (string-to-base64-string (format nil)))))))
 
 (defun github-repos-info (repos-id)
   (let* ((url (format nil "https://api.github.com/repos/~A" repos-id))
-         (body (send-get url)))
+         (body (send-get url :basic-auth (and *github-access-token*
+                                              `(,*github-access-token* . "x-oauth-basic")))))
     (jonathan:parse (babel:octets-to-string body) :as :alist)))
 
 ;; version 2.0 is recommended, however we use 1.0 because it doesn't include "website"

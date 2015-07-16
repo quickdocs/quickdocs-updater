@@ -24,7 +24,8 @@
               (return-from ,return-block
                 (progn ,@body))))))))
 
-(defun send-get (url &key (timeout 60))
+(defun send-get (url &key (timeout 60) basic-auth)
   (dex:get url
            :headers `(("User-Agent" . ,*user-agent*))
+           :basic-auth basic-auth
            :timeout timeout))
