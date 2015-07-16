@@ -131,14 +131,14 @@
              (domain (quri:uri-domain uri)))
         (cond
           ((string= domain "github.com")
-           (let ((repos-id (ppcre:regex-replace "\\.[^\\.]*$" (quri:uri-path uri) "")))
+           (let ((repos-id (ppcre:scan-to-strings "/[^/]+/[^/\\.]+" (quri:uri-path uri))))
              (concatenate 'string
                           "https://github.com"
                           repos-id)))
           ((string= domain "bitbucket.org")
            source-url)
           ((string= domain "gitlab.common-lisp.net")
-           (let ((repos-id (ppcre:regex-replace "\\.[^\\.]*$" (quri:uri-path uri) "")))
+           (let ((repos-id (ppcre:scan-to-strings "/[^/]+/[^/\\.]+" (quri:uri-path uri))))
              (concatenate 'string
                           "http://gitlab.common-lisp.net"
                           repos-id))))))))
