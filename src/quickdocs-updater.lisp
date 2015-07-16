@@ -14,6 +14,8 @@
                 :ql-release-archive-url)
   (:import-from :quickdocs-updater.readme 
                 :convert-readme)
+  (:import-from :quickdocs-updater.repos
+                :repos-info)
   (:import-from :quickdocs-updater.cliki
                 :updated-cliki-project-info)
   (:import-from :datafly
@@ -162,4 +164,33 @@
                 (princ "none" *error-output*))))
         (fresh-line *error-output*)))
     (sleep 3))
+  t)
+
+(defun update-repos-info (ql-dist-version)
+  (format *error-output* "~2&Updating repository informations...~%")
+  (execute (delete-from :repos_info))
+  (dolist (release (ql-dist-releases ql-dist-version))
+    (let ((repos-url (release-repos-url release)))
+      (when repos-url
+        (let* ((uri (quri:uri repos-url))
+               (domain (quri:uri-domain uri))
+               (repos-info
+                 (cond
+                   ((string= domain "github.com")
+                    (repos-info :github (quri:uri-path uri)))
+                   ((string= domain "bitbucket.org")
+                    (repos-info :bitbucket (quri:uri-path uri))))))
+          (when repos-info
+            (execute
+             (insert-into :repos_info
+               (set= :project_name release
+                     :type         (getf repos-info :type)
+                     :repos-id     (getf repos-info :repos-id)
+                     :description  (getf repos-info :description)
+                     :homepage_url (getf repos-info :homepage-url)
+                     :watch_count  (getf repos-info :watch-count)
+                     :forks_count  (getf repos-info :forks-count)
+                     :stars_count  (getf repos-info :stars-count)
+                     :created_at   (getf repos-info :created-at)
+                     :updated_at   (getf repos-info :updated-at)))))))))
   t)

@@ -129,12 +129,10 @@
         (cond
           ((string= domain "github.com")
            (let ((repos-id (ppcre:regex-replace "\\.[^\\.]*$" (quri:uri-path uri) "")))
-             ;; TODO: request website URL to GitHub
              (concatenate 'string
                           "https://github.com"
                           repos-id)))
           ((string= domain "bitbucket.org")
-           ;; TODO: request website URL to BitBucket
            source-url)
           ((string= domain "gitlab.common-lisp.net")
            (let ((repos-id (ppcre:regex-replace "\\.[^\\.]*$" (quri:uri-path uri) "")))

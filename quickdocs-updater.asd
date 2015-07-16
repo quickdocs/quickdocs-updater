@@ -23,17 +23,21 @@
                :cl-ppcre
                :dexador
                :quri
+               :jonathan
+               :babel
                :plump
                :clss
                :uiop
+               :local-time
                :alexandria
                :split-sequence)
   :components ((:module "src"
                 :components
-                ((:file "quickdocs-updater" :depends-on ("extracter" "release" "readme" "cliki"))
+                ((:file "quickdocs-updater" :depends-on ("extracter" "release" "readme" "cliki" "repos"))
                  (:file "release" :depends-on ("extracter" "http"))
                  (:file "readme")
                  (:file "cliki" :depends-on ("http"))
+                 (:file "repos" :depends-on ("http"))
                  (:file "extracter")
                  (:file "http"))))
   :description "Updates Quickdocs database"
