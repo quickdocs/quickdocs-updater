@@ -123,6 +123,7 @@
   (check-type release string)
   (multiple-value-bind (type source-url)
       (project-source-info release)
+    (declare (ignore type))
     (ignore-some-conditions (quri:uri-error)
       (let* ((uri (quri:uri source-url))
              (domain (quri:uri-domain uri)))

@@ -14,16 +14,15 @@
           (asdf:component-version (asdf:find-system :quickdocs-updater))))
 
 (defmacro with-retry (count &body body)
-  (with-gensyms (try retry return-block)
+  (with-gensyms (retry return-block)
     (once-only (count)
-      `(let ((,try 0))
-         (block ,return-block
-           (tagbody
-              ,retry
-              (handler-bind ((dex:http-request-not-found #'dex:ignore-and-continue)
-                             (dex:http-request-failed (dex:retry-request ,count)))
-                (return-from ,return-block
-                  (progn ,@body)))))))))
+      `(block ,return-block
+         (tagbody
+            ,retry
+            (handler-bind ((dex:http-request-not-found #'dex:ignore-and-continue)
+                           (dex:http-request-failed (dex:retry-request ,count)))
+              (return-from ,return-block
+                (progn ,@body))))))))
 
 (defun send-get (url &key (timeout 60))
   (dex:get url
