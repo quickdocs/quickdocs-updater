@@ -50,7 +50,9 @@
            (cdr (assoc key info :test #'string=))))
     (handler-bind ((dex:http-request-not-found
                      (lambda (e)
-                       (warn "~S is not found at ~S." repos-id (dex:request-uri e))
+                       (warn "~S is not found at ~S."
+                             repos-id
+                             (quri:render-uri (dex:request-uri e)))
                        (return-from repos-info nil)))
                    (dex:http-request-failed (dex:retry-request 5)))
       (ecase type
