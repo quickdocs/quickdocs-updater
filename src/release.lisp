@@ -14,6 +14,7 @@
                 :ignore-some-conditions)
   (:export :release-version
            :primary-system
+           :release-homepage-url
            :release-repos-url
            :ql-dist-releases
            :ql-release-archive-url
@@ -97,6 +98,27 @@
         (split-sequence #\Space data :count 2)
       (values type source-url))))
 
+(defun release-homepage-url (release)
+  (check-type release string)
+  (multiple-value-bind (type source-url)
+      (project-source-info release)
+    (ignore-some-conditions (quri:uri-error)
+      (let* ((uri (quri:uri source-url))
+             (domain (quri:uri-domain uri)))
+        (cond
+          ((string= domain "common-lisp.net")
+           (let ((match (nth-value 1 (ppcre:scan-to-strings "://common-lisp\\.net/project/([^\\/]+)" source-url))))
+             (format nil "http://common-lisp.net/project/~A"
+                     (quri:url-encode
+                      (if match
+                          (aref match 0)
+                          release)
+                      :encoding :utf-8))))
+          ((or (string= domain "weitz.de")
+               (string= type "ediware-http"))
+           (format nil "http://weitz.de/~A/"
+                   (quri:url-encode release :encoding :utf-8))))))))
+
 (defun release-repos-url (release)
   (check-type release string)
   (multiple-value-bind (type source-url)
@@ -118,16 +140,4 @@
            (let ((repos-id (ppcre:regex-replace "\\.[^\\.]*$" (quri:uri-path uri) "")))
              (concatenate 'string
                           "http://gitlab.common-lisp.net"
-                          repos-id)))
-          ((string= domain "common-lisp.net")
-           (let ((match (nth-value 1 (ppcre:scan-to-strings "://common-lisp\\.net/project/([^\\/]+)" source-url))))
-             (format nil "http://common-lisp.net/project/~A"
-                     (quri:url-encode
-                      (if match
-                          (aref match 0)
-                          release)
-                      :encoding :utf-8))))
-          ((or (string= domain "weitz.de")
-               (string= type "ediware-http"))
-           (format nil "http://weitz.de/~A/"
-                   (quri:url-encode release :encoding :utf-8))))))))
+                          repos-id))))))))

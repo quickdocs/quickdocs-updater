@@ -7,7 +7,9 @@
   (:import-from :quickdocs-updater.extracter
                 :release-info)
   (:import-from :quickdocs-updater.release
+                :release-homepage-url
                 :release-repos-url
+                :primary-system
                 :ql-dist-releases
                 :ql-release-archive-url)
   (:import-from :quickdocs-updater.readme 
@@ -80,6 +82,18 @@
           (create-project :ql-dist-version ql-dist-version
                           :name (getf release-info :name)
                           :release-version (getf release-info :release-version)
+                          :homepage-url (or (release-homepage-url release)
+                                            (let ((primary-system-name (primary-system release ql-dist-version)))
+                                              (or (getf (find primary-system-name
+                                                              (getf release-info :systems)
+                                                              :key (lambda (info)
+                                                                     (getf info :name))
+                                                              :test #'string=)
+                                                        :homepage)
+                                                  (getf (find-if (lambda (info)
+                                                                   (getf info :homepage))
+                                                                 (getf release-info :systems))
+                                                        :homepage))))
                           :repos-url (release-repos-url release)
                           :archive-url (ql-release-archive-url release ql-dist-version)
                           :project-readme (when (getf release-info :readme-file)
