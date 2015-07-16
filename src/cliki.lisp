@@ -2,7 +2,8 @@
 (defpackage quickdocs-updater.cliki
   (:use :cl)
   (:import-from :quickdocs-updater.http
-                :send-get)
+                :send-get
+                :with-retry)
   (:import-from :quri
                 :url-encode)
   (:export :cliki-project-info))
@@ -17,14 +18,13 @@
           (quri:url-encode project-name :encoding :utf-8)))
 
 (defun retrieve-cliki-project-page (project-name)
-  (send-get (project-page-url project-name) :retries 5))
+  (with-retry 5
+    (send-get (project-page-url project-name))))
 
 (defun retrieve-cliki-project-history (project-name)
-  (handler-bind ((dex:http-request-failed
-                   (lambda (e)
-                     (when (= (dex:response-status e) 500)
-                       (return-from retrieve-cliki-project-history nil)))))
-    (send-get (project-history-url project-name) :retries 5)))
+  (with-retry 5
+    (handler-bind ((dex:http-request-internal-server-error #'dex:ignore-and-continue))
+      (send-get (project-history-url project-name)))))
 
 (defun cliki-project-last-updated-at (project-name)
   (let ((body (retrieve-cliki-project-history project-name)))
