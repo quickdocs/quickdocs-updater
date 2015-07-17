@@ -76,7 +76,10 @@
              (list :type :bitbucket
                    :repos-id repos-id
                    :description  (assocdr "description" info)
-                   :homepage-url (assocdr "website" info)
+                   :homepage-url (let ((website (assocdr "website" info)))
+                                   (if (= 0 (length website))
+                                       nil
+                                       website))
                    :watch-count  (assocdr "followers_count" info)
                    :forks-count  (assocdr "forks_count" info)
                    :stars-count  nil
