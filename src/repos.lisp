@@ -10,11 +10,6 @@
 
 (defvar *github-access-token* nil)
 
-(defun github-api-headers ()
-  (if *github-access-token*
-      `(("Authorization" . ,(format nil "Basic ~A"
-                                    (string-to-base64-string (format nil)))))))
-
 (defun github-repos-info (repos-id)
   (let* ((url (format nil "https://api.github.com/repos/~A" repos-id))
          (body (send-get url :basic-auth (and *github-access-token*
