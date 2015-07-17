@@ -16,7 +16,7 @@
   :version "0.1"
   :author "Eitaro Fukamachi"
   :license "BSD 2-Clause"
-  :depends-on (:quickdocs-extracter
+  :depends-on (:quickdocs-serializer
                :quickdocs-database
                :datafly
                :sxql
