@@ -1,0 +1,12 @@
+#!/bin/sh
+#|-*- mode:lisp -*-|#
+#|
+exec ros -Q -- $0 "$@"
+|#
+
+(ql:quickload '(:quickdocs-updater-quicklisp-blog) :silent t)
+
+(defun main ()
+  (datafly:connect-toplevel :mysql :database-name "quickdocs"
+                            :username "root")
+  (quickdocs-updater.quicklisp-blog:update-download-stats))
