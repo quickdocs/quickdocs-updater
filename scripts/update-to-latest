@@ -19,19 +19,23 @@ exec ros -Q -- $0 "$@"
     (uiop:run-program (cons (to-string program)
                             (mapcar #'to-string args)))))
 
+(defun current-ql-dist-version ()
+  (let ((conn (dbi:connect :mysql :database-name "quickdocs" :username "root")))
+    (unwind-protect
+         (getf (dbi:fetch
+                (dbi:execute
+                 (dbi:prepare conn "SELECT value FROM preference WHERE name = 'ql-dist-version' LIMIT 1")))
+               :|value|)
+      (dbi:disconnect conn))))
+
 (defun main ()
   (unless (uiop:getenv "GITHUB_ACCESS_TOKEN")
     (error "GITHUB_ACCESS_TOKEN is not set."))
 
-  (let* ((conn (dbi:connect :mysql :database-name "quickdocs" :username "root"))
-         (ql-dist-version
-           (getf (dbi:fetch
-                  (dbi:execute
-                   (dbi:prepare conn "SELECT value FROM preference WHERE name = 'ql-dist-version' LIMIT 1")))
-                 :|value|))
-         (latest-version
-           (car (first (ql:available-dist-versions "quicklisp")))))
-    (when (equal ql-dist-verison latest-version)
+  (let ((ql-dist-version (current-ql-dist-version))
+        (latest-version
+          (car (first (ql:available-dist-versions "quicklisp")))))
+    (when (equal ql-dist-version latest-version)
       (format *error-output* "~&It is already the latest version ~S.~%" ql-dist-version)
       (uiop:quit))
 
