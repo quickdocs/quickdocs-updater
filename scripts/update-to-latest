@@ -4,7 +4,7 @@
 exec ros -Q -- $0 "$@"
 |#
 
-(ql:quickload '(:cl-dbi) :silent t)
+(ql:quickload '(:uiop :cl-dbi) :silent t)
 
 (defun script (path &optional (system :quickdocs-updater))
   (asdf:system-relative-pathname
@@ -17,7 +17,9 @@ exec ros -Q -- $0 "$@"
                (namestring arg)
                arg)))
     (uiop:run-program (cons (to-string program)
-                            (mapcar #'to-string args)))))
+                            (mapcar #'to-string args))
+                      :output *standard-output*
+                      :error-output *error-output*)))
 
 (defun current-ql-dist-version ()
   (let ((conn (dbi:connect :mysql :database-name "quickdocs" :username "root")))
