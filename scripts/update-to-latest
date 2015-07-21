@@ -1,0 +1,52 @@
+#!/bin/sh
+#|-*- mode:lisp -*-|#
+#|
+exec ros -Q -- $0 "$@"
+|#
+
+(ql:quickload '(:cl-dbi) :silent t)
+
+(defun script (path &optional (system :quickdocs-updater))
+  (asdf:system-relative-pathname
+   system
+   (merge-pathnames path #P"scripts/")))
+
+(defun run (program &rest args)
+  (flet ((to-string (arg)
+           (if (pathnamep arg)
+               (namestring arg)
+               arg)))
+    (uiop:run-program (cons (to-string program)
+                            (mapcar #'to-string args)))))
+
+(defun main ()
+  (unless (uiop:getenv "GITHUB_ACCESS_TOKEN")
+    (error "GITHUB_ACCESS_TOKEN is not set."))
+
+  (ql::available-update (ql-dist:dist "quicklisp"))
+  (let* ((conn (dbi:connect :mysql :database-name "quickdocs" :username "root"))
+         (ql-dist-version
+           (getf (dbi:fetch
+                  (dbi:execute
+                   (dbi:prepare conn "SELECT value FROM preference WHERE name = 'ql-dist-version' LIMIT 1")))
+                 :|value|))
+         (latest-version
+           (car (first (ql:available-dist-versions (ql-dist:dist "quicklisp"))))))
+    (when (equal ql-dist-verison latest-version)
+      (format *error-output* "~&It is already the latest version ~S.~%" ql-dist-version)
+      (uiop:quit))
+
+    (format *error-output* "~&Updating from ~S to ~S...~%"
+            ql-dist-version
+            latest-version)
+
+    (let ((*default-pathname-defaults* (asdf:system-source-directory :quickdocs-updater)))
+      (run (script "extract-dist" :quickdocs-extracter)
+           latest-version
+           "delete-and-retry"))
+    (run (script "update-dist")
+         (asdf:system-relative-pathname :quickdocs-updater #P"dists/")
+         latest-version)
+    (run (script "update-cliki-info") latest-version)
+    (run (script "update-repos-info") latest-version)
+    (run (script "update-download-stats"))))
