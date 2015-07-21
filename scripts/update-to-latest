@@ -45,10 +45,10 @@ exec ros -Q -- $0 "$@"
             ql-dist-version
             latest-version)
 
-    (let ((*default-pathname-defaults*
-            (asdf:system-relative-pathname :quickdocs-updater #P"modules/quicklisp-projects/")))
-      (run "git" "fetch")
-      (run "git" "checkout" (format nil "quicklisp-~A" latest-version)))
+    (run "git" "--git-dir" (asdf:system-relative-pathname :quickdocs-updater #P"modules/quicklisp-projects/.git")
+         "fetch")
+    (run "git" "--git-dir" (asdf:system-relative-pathname :quickdocs-updater #P"modules/quicklisp-projects/.git")
+         "checkout" (format nil "quicklisp-~A" latest-version))
 
     (let ((*default-pathname-defaults* (asdf:system-source-directory :quickdocs-updater)))
       (run (script "extract-dist" :quickdocs-extracter)
