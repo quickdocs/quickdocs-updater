@@ -32,8 +32,6 @@
 
 (defun update-dist (ql-dist-version)
   (check-type ql-dist-version string)
-  (execute
-   (delete-from :project (where (:= :ql_dist_version ql-dist-version))))
   ;; Update database
   (let ((releases (ql-dist-releases ql-dist-version)))
     ;; Update 'project' and 'system' tables
@@ -76,6 +74,10 @@
     (warn "The extracted info of ~S cannot be read. Skipping." release)
     (return-from update-release))
   (format *error-output* "~&Updating ~S...~%" release)
+  (execute
+   (delete-from :project
+     (where (:and (:= :name release)
+                  (:= :ql_dist_version ql-dist-version)))))
   (let ((project
           (create-project :ql-dist-version ql-dist-version
                           :name (getf release-info :name)
