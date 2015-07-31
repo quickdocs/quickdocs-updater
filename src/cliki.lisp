@@ -78,7 +78,8 @@
 (defun parse-categories (html)
   (delete-duplicates
    (map 'list
-        #'plump:text
+        (lambda (el)
+          (string-downcase (plump:text el)))
         (clss:select "#article .category" (plump:parse html)))
    :test #'string=
    :from-end t))
