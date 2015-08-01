@@ -9,4 +9,6 @@ exec ros -Q -- $0 "$@"
 (defun main (&optional (ql-dist-version (ql-dist:version (ql-dist:dist "quicklisp"))))
   (datafly:connect-toplevel :mysql :database-name "quickdocs"
                             :username "root")
-  (quickdocs-updater:update-cliki-info ql-dist-version))
+  (let ((sb-impl::*default-external-format* :utf-8)
+        (sb-alien::*default-c-string-external-format* :utf-8))
+    (quickdocs-updater:update-cliki-info ql-dist-version)))

@@ -13,4 +13,6 @@ exec ros -Q -- $0 "$@"
         (uiop:getenv "GITHUB_ACCESS_TOKEN"))
   (unless quickdocs-updater.repos:*github-access-token*
     (error "GITHUB_ACCESS_TOKEN is not set."))
-  (quickdocs-updater:update-repos-info ql-dist-version))
+  (let ((sb-impl::*default-external-format* :utf-8)
+        (sb-alien::*default-c-string-external-format* :utf-8))
+    (quickdocs-updater:update-repos-info ql-dist-version)))
