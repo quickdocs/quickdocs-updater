@@ -87,7 +87,9 @@
 ;;   It would be a problem when updating old dists.
 (defun project-source-txt (release)
   (check-type release string)
-  (merge-pathnames (format nil "~A/source.txt" release)
+  ;; The directory structure has been changed since Aug 13 (quicklisp-2015-09-24).
+  ;; All project directories are in "projects/" directory now.
+  (merge-pathnames (format nil "projects/~A/source.txt" release)
                    (asdf:system-relative-pathname :quickdocs-updater
                                                   #P"modules/quicklisp-projects/")))
 
