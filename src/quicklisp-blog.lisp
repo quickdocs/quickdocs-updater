@@ -38,18 +38,19 @@
     (unless entry
       (return-from latest-download-stats))
 
-    (let ((content (plump:parse (plump:text (aref (clss:select "content" entry) 0)))))
+    (let* ((content (plump:parse (plump:text (aref (clss:select "content" entry) 0))))
+           (children (plump:children (aref (clss:select "pre" content) 0)))
+           (children (remove-if-not (lambda (node)
+                                      (or (plump:text-node-p node)
+                                          (string= (plump:tag-name node) "a")))
+                                    children)))
+      
+
       (values
-       (map 'list
-            (lambda (node)
-              (let ((match
-                        (nth-value 1
-                                   (ppcre:scan-to-strings "^\\s*(\\d+?)\\s+(.+?)\\s*$"
-                                                          (plump:text node)))))
-                (cons (aref match 1)
-                      (parse-integer (aref match 0)))))
-            (remove-if-not #'plump:text-node-p
-                           (plump:children (aref (clss:select "pre" content) 0))))
+       (loop for (count name) on (coerce children 'list) by #'cddr
+             collect (cons
+                      (parse-integer (plump:text count))
+                      (plump:text name)))
        (local-time:timestamp-to-universal
         (local-time:parse-timestring
          (plump:text (aref (clss:select "published" entry) 0))))))))
