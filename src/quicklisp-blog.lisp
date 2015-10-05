@@ -44,13 +44,12 @@
                                       (or (plump:text-node-p node)
                                           (string= (plump:tag-name node) "a")))
                                     children)))
-      
 
       (values
        (loop for (count name) on (coerce children 'list) by #'cddr
              collect (cons
-                      (parse-integer (plump:text count))
-                      (plump:text name)))
+                      (plump:text name)
+                      (parse-integer (plump:text count))))
        (local-time:timestamp-to-universal
         (local-time:parse-timestring
          (plump:text (aref (clss:select "published" entry) 0))))))))
