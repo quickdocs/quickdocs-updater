@@ -1,7 +1,8 @@
 (in-package :cl-user)
 (defpackage quickdocs-updater.quicklisp-blog
   (:use :cl
-        :sxql)
+        :sxql
+        :split-sequence)
   (:import-from :datafly
                 :execute)
   (:export :latest-download-stats
@@ -39,17 +40,12 @@
       (return-from latest-download-stats))
 
     (let* ((content (plump:parse (plump:text (aref (clss:select "content" entry) 0))))
-           (children (plump:children (aref (clss:select "pre" content) 0)))
-           (children (remove-if-not (lambda (node)
-                                      (or (plump:text-node-p node)
-                                          (string= (plump:tag-name node) "a")))
-                                    children)))
+           (content (plump:text (aref (clss:select "pre" content) 0)))
+           (children (split-sequence #\Space content :remove-empty-subseqs t)))
 
       (values
-       (loop for (count name) on (coerce children 'list) by #'cddr
-             collect (cons
-                      (plump:text name)
-                      (parse-integer (plump:text count))))
+       (loop for (count name) on children by #'cddr
+             collect (cons name (parse-integer count)))
        (local-time:timestamp-to-universal
         (local-time:parse-timestring
          (plump:text (aref (clss:select "published" entry) 0))))))))
