@@ -89,58 +89,64 @@
   (check-type release string)
   ;; The directory structure has been changed since Aug 13 (quicklisp-2015-09-24).
   ;; All project directories are in "projects/" directory now.
-  (merge-pathnames (format nil "projects/~A/source.txt" release)
-                   (asdf:system-relative-pathname :quickdocs-updater
-                                                  #P"modules/quicklisp-projects/")))
+  (let ((file
+            (merge-pathnames (format nil "projects/~A/source.txt" release)
+                             (asdf:system-relative-pathname :quickdocs-updater
+                                                            #P"modules/quicklisp-projects/"))))
+    (when (probe-file file)
+      file)))
 
 (defun project-source-info (release)
   (check-type release string)
   (flet ((chomp (str)
            (subseq str 0 (1+ (position #\Newline str :test #'char/= :from-end t)))))
-    (let ((data (uiop:read-file-string (project-source-txt release))))
-      (destructuring-bind (type source-url)
-          (split-sequence #\Space data :count 2)
-        (values type (chomp source-url))))))
+    (let ((source.txt (project-source-txt release)))
+      (when source.txt
+        (let ((data (uiop:read-file-string source.txt)))
+          (destructuring-bind (type source-url)
+              (split-sequence #\Space data :count 2)
+            (values type (chomp source-url))))))))
 
 (defun release-homepage-url (release)
   (check-type release string)
   (multiple-value-bind (type source-url)
       (project-source-info release)
-    (ignore-some-conditions (quri:uri-error)
-      (let* ((uri (quri:uri source-url))
-             (domain (quri:uri-domain uri)))
-        (cond
-          ((string= domain "common-lisp.net")
-           (let ((match (nth-value 1 (ppcre:scan-to-strings "://common-lisp\\.net/project/([^\\/]+)" source-url))))
-             (format nil "http://common-lisp.net/project/~A"
-                     (quri:url-encode
-                      (if match
-                          (aref match 0)
-                          release)
-                      :encoding :utf-8))))
-          ((or (string= domain "weitz.de")
-               (string= type "ediware-http"))
-           (format nil "http://weitz.de/~A/"
-                   (quri:url-encode release :encoding :utf-8))))))))
+    (when type
+      (ignore-some-conditions (quri:uri-error)
+        (let* ((uri (quri:uri source-url))
+               (domain (quri:uri-domain uri)))
+          (cond
+            ((string= domain "common-lisp.net")
+             (let ((match (nth-value 1 (ppcre:scan-to-strings "://common-lisp\\.net/project/([^\\/]+)" source-url))))
+               (format nil "http://common-lisp.net/project/~A"
+                       (quri:url-encode
+                        (if match
+                            (aref match 0)
+                            release)
+                        :encoding :utf-8))))
+            ((or (string= domain "weitz.de")
+                 (string= type "ediware-http"))
+             (format nil "http://weitz.de/~A/"
+                     (quri:url-encode release :encoding :utf-8)))))))))
 
 (defun release-repos-url (release)
   (check-type release string)
   (multiple-value-bind (type source-url)
       (project-source-info release)
-    (declare (ignore type))
-    (ignore-some-conditions (quri:uri-error)
-      (let* ((uri (quri:uri source-url))
-             (domain (quri:uri-domain uri)))
-        (cond
-          ((string= domain "github.com")
-           (let ((repos-id (ppcre:scan-to-strings "/[^/]+/[a-zA-Z0-9-_.]+" (quri:uri-path uri))))
-             (concatenate 'string
-                          "https://github.com"
-                          repos-id)))
-          ((string= domain "bitbucket.org")
-           source-url)
-          ((string= domain "gitlab.common-lisp.net")
-           (let ((repos-id (ppcre:scan-to-strings "/[^/]+/[a-zA-Z0-9-_.]+" (quri:uri-path uri))))
-             (concatenate 'string
-                          "http://gitlab.common-lisp.net"
-                          repos-id))))))))
+    (when type
+      (ignore-some-conditions (quri:uri-error)
+        (let* ((uri (quri:uri source-url))
+               (domain (quri:uri-domain uri)))
+          (cond
+            ((string= domain "github.com")
+             (let ((repos-id (ppcre:scan-to-strings "/[^/]+/[a-zA-Z0-9-_.]+" (quri:uri-path uri))))
+               (concatenate 'string
+                            "https://github.com"
+                            repos-id)))
+            ((string= domain "bitbucket.org")
+             source-url)
+            ((string= domain "gitlab.common-lisp.net")
+             (let ((repos-id (ppcre:scan-to-strings "/[^/]+/[a-zA-Z0-9-_.]+" (quri:uri-path uri))))
+               (concatenate 'string
+                            "http://gitlab.common-lisp.net"
+                            repos-id)))))))))
