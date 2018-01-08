@@ -27,7 +27,7 @@
                (retrieve-entries url)
              (let ((entry
                      (find-if (lambda (entry)
-                                (ppcre:scan "download stats" (plump:text (aref (clss:select "title" entry) 0))))
+                                (ppcre:scan "(?i)download stats" (plump:text (aref (clss:select "title" entry) 0))))
                               entries)))
                (cond
                  (entry (return entry))
@@ -40,8 +40,13 @@
       (return-from latest-download-stats))
 
     (let* ((content (plump:parse (plump:text (aref (clss:select "content" entry) 0))))
-           (content (plump:text (aref (clss:select "pre" content) 0)))
-           (children (split-sequence #\Space content :remove-empty-subseqs t)))
+           (children
+             (remove ""
+                     (map 'list
+                          (lambda (el)
+                            (string-trim '(#\Space #\Tab #\Newline) (plump:text el)))
+                          (plump:children (aref (clss:select "pre" content) 0)))
+                     :test #'string=)))
 
       (values
        (loop for (count name) on children by #'cddr
